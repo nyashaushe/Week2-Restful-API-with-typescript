@@ -1,0 +1,12 @@
+# Dependencies
+/node_modules
+
+# Production
+/dist
+
+# Env
+.env
+
+# Docs
+context.md
+rubric.md
