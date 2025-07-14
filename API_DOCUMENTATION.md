@@ -29,26 +29,26 @@ Follow these steps to get the project running on your local machine.
 
 ### Installation & Setup
 
-1.  **Clone the repository** (if you haven't already):
+1. **Clone the repository** (if you haven't already):
 
     ```bash
     git clone <your-repository-url>
     cd <your-project-directory>
     ```
 
-2.  **Install dependencies** using pnpm:
+2. **Install dependencies** using pnpm:
 
     ```bash
     pnpm install
     ```
 
-3.  **(Optional) Set up the PostgreSQL Database**:
+3. **(Optional) Set up the PostgreSQL Database**:
     The project is currently configured to use an in-memory data store, meaning all data will be lost upon server restart. The `init.sql` file is provided for future integration with a PostgreSQL database.
 
     - Create a PostgreSQL database (e.g., `week2_db`).
     - To connect it, you would need to implement the database logic in the controller files to replace the in-memory arrays.
 
-4.  **Run the application in development mode**:
+4. **Run the application in development mode**:
 
     ```bash
     pnpm dev
@@ -62,8 +62,8 @@ This project uses Swagger to provide interactive API documentation. This is the 
 
 ### How to Access
 
-1.  Make sure the server is running (`pnpm dev`).
-2.  Open your web browser and navigate to:
+1. Make sure the server is running (`pnpm dev`).
+2. Open your web browser and navigate to:
 
     [**http://localhost:3000/api-docs**](http://localhost:3000/api-docs)
 
@@ -71,11 +71,11 @@ This project uses Swagger to provide interactive API documentation. This is the 
 
 - The Swagger UI page lists all available API endpoints, grouped by resource (e.g., `products`, `users`).
 - You can expand each endpoint to see detailed information, including:
-    - The HTTP method (GET, POST, PUT, DELETE).
-    - A description of what the endpoint does.
-    - Required parameters (e.g., an ID in the URL).
-    - The structure of the request body (for POST and PUT requests).
-    - Example responses.
+  - The HTTP method (GET, POST, PUT, DELETE).
+  - A description of what the endpoint does.
+  - Required parameters (e.g., an ID in the URL).
+  - The structure of the request body (for POST and PUT requests).
+  - Example responses.
 - You can use the "Try it out" button to send live API requests directly from your browser and see the responses.
 
 ## 4. Connecting with a Frontend Application
@@ -147,13 +147,15 @@ Cross-Origin Resource Sharing (CORS) is a security feature that may block reques
 
 If you encounter CORS errors in your browser's console, you will need to enable CORS on the server. You can do this by adding the `cors` middleware to your Express application in `src/index.ts`.
 
-1.  Install the `cors` package:
+1. Install the `cors` package:
+
     ```bash
     pnpm install cors
     pnpm install @types/cors -D
     ```
 
-2.  Use it in `src/index.ts`:
+2. Use it in `src/index.ts`:
+
     ```typescript
     import cors from 'cors';
     // ... other imports
@@ -178,62 +180,62 @@ Each resource generally follows standard RESTful conventions with the following 
 
 ### Resources and Endpoints
 
-*   **Products (`/products`)**
-    *   `GET /products`: Get all products.
-    *   `POST /products`: Create a new product.
-    *   `PUT /products/:id`: Update a product.
-    *   `DELETE /products/:id`: Delete a product.
+- **Products (`/products`)**
+  - `GET /products`: Get all products.
+  - `POST /products`: Create a new product.
+  - `PUT /products/:id`: Update a product.
+  - `DELETE /products/:id`: Delete a product.
 
-*   **Orders (`/orders`)**
-    *   `GET /orders`: Get all orders.
-    *   `POST /orders`: Create a new order.
-    *   `PUT /orders/:id`: Update an order.
-    *   `DELETE /orders/:id`: Delete an order.
+- **Orders (`/orders`)**
+  - `GET /orders`: Get all orders.
+  - `POST /orders`: Create a new order.
+  - `PUT /orders/:id`: Update an order.
+  - `DELETE /orders/:id`: Delete an order.
 
-*   **Customers (`/customers`)**
-    *   `GET /customers`: Get all customers.
-    *   `POST /customers`: Create a new customer.
-    *   `PUT /customers/:id`: Update a customer.
-    *   `DELETE /customers/:id`: Delete a customer.
+- **Customers (`/customers`)**
+  - `GET /customers`: Get all customers.
+  - `POST /customers`: Create a new customer.
+  - `PUT /customers/:id`: Update a customer.
+  - `DELETE /customers/:id`: Delete a customer.
 
-*   **Invoices (`/invoices`)**
-    *   `GET /invoices`: Get all invoices.
-    *   `POST /invoices`: Create a new invoice.
-    *   `PUT /invoices/:id`: Update an invoice.
-    *   `DELETE /invoices/:id`: Delete an invoice.
+- **Invoices (`/invoices`)**
+  - `GET /invoices`: Get all invoices.
+  - `POST /invoices`: Create a new invoice.
+  - `PUT /invoices/:id`: Update an invoice.
+  - `DELETE /invoices/:id`: Delete an invoice.
 
-*   **Payments (`/payments`)**
-    *   `GET /payments`: Get all payments.
-    *   `POST /payments`: Create a new payment.
-    *   `PUT /payments/:id`: Update a payment.
-    *   `DELETE /payments/:id`: Delete a payment.
+- **Payments (`/payments`)**
+  - `GET /payments`: Get all payments.
+  - `POST /payments`: Create a new payment.
+  - `PUT /payments/:id`: Update a payment.
+  - `DELETE /payments/:id`: Delete a payment.
 
-*   **Shipments (`/shipments`)**
-    *   `GET /shipments`: Get all shipments.
-    *   `POST /shipments`: Create a new shipment.
-    *   `PUT /shipments/:id`: Update a shipment.
-    *   `DELETE /shipments/:id`: Delete a shipment.
+- **Shipments (`/shipments`)**
+  - `GET /shipments`: Get all shipments.
+  - `POST /shipments`: Create a new shipment.
+  - `PUT /shipments/:id`: Update a shipment.
+  - `DELETE /shipments/:id`: Delete a shipment.
 
-*   **Reviews (`/reviews`)**
-    *   `GET /reviews`: Get all reviews.
-    *   `POST /reviews`: Create a new review.
-    *   `PUT /reviews/:id`: Update a review.
-    *   `DELETE /reviews/:id`: Delete a review.
+- **Reviews (`/reviews`)**
+  - `GET /reviews`: Get all reviews.
+  - `POST /reviews`: Create a new review.
+  - `PUT /reviews/:id`: Update a review.
+  - `DELETE /reviews/:id`: Delete a review.
 
-*   **Categories (`/categories`)**
-    *   `GET /categories`: Get all categories.
-    *   `POST /categories`: Create a new category.
-    *   `PUT /categories/:id`: Update a category.
-    *   `DELETE /categories/:id`: Delete a category.
+- **Categories (`/categories`)**
+  - `GET /categories`: Get all categories.
+  - `POST /categories`: Create a new category.
+  - `PUT /categories/:id`: Update a category.
+  - `DELETE /categories/:id`: Delete a category.
 
-*   **Tasks (`/tasks`)**
-    *   `GET /tasks`: Get all tasks.
-    *   `POST /tasks`: Create a new task.
-    *   `PUT /tasks/:id`: Update a task.
-    *   `DELETE /tasks/:id`: Delete a task.
+- **Tasks (`/tasks`)**
+  - `GET /tasks`: Get all tasks.
+  - `POST /tasks`: Create a new task.
+  - `PUT /tasks/:id`: Update a task.
+  - `DELETE /tasks/:id`: Delete a task.
 
-*   **Users (`/users`)**
-    *   `GET /users`: Get all users.
-    *   `POST /users`: Create a new user.
-    *   `PUT /users/:id`: Update a user.
-    *   `DELETE /users/:id`: Delete a user.
+- **Users (`/users`)**
+  - `GET /users`: Get all users.
+  - `POST /users`: Create a new user.
+  - `PUT /users/:id`: Update a user.
+  - `DELETE /users/:id`: Delete a user.
