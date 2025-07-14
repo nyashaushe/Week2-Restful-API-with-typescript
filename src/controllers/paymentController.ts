@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Payment } from '../interfaces/Payment';
+import { Payment } from '../interfaces/Payment.js';
+
+// In-memory store for payments
+let payments: Payment[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Payment } from '../interfaces/Payment';
  *       200:
  *         description: Successful operation
  */
-export const getPayments = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM payments');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getPayments = (req: Request, res: Response) => {
+  res.json(payments);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getPayments = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createPayment = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO payments (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createPayment = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newPayment: Payment = {
+    id: currentId++,
+    name,
+  };
+
+  payments.push(newPayment);
+  res.status(201).json(newPayment);
 };
 
 /**
@@ -83,21 +85,18 @@ export const createPayment = async (req: Request, res: Response) => {
  *       404:
  *         description: Payment not found
  */
-export const updatePayment = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE payments SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Payment not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updatePayment = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const paymentIndex = payments.findIndex(p => p.id === parseInt(id, 10));
+
+  if (paymentIndex === -1) {
+    return res.status(404).json({ error: 'Payment not found' });
   }
+
+  payments[paymentIndex].name = name;
+  res.json(payments[paymentIndex]);
 };
 
 /**
@@ -119,15 +118,20 @@ export const updatePayment = async (req: Request, res: Response) => {
  *       404:
  *         description: Payment not found
  */
-export const deletePayment = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM payments WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Payment not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deletePayment = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const paymentIndex = payments.findIndex(p => p.id === parseInt(id, 10));
+
+  if (paymentIndex === -1) {
+    return res.status(404).json({ error: 'Payment not found' });
   }
+
+  payments.splice(paymentIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the payments array
+export const resetPayments = () => {
+  payments = [];
+  currentId = 1;
 };

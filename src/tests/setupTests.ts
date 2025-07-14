@@ -1,31 +1,23 @@
-import { Pool } from 'pg';
-import { dbConfig } from '../src/config';
+import { resetUsers } from '../controllers/userController';
+import { resetTasks } from '../controllers/taskController';
+import { resetCategories } from '../controllers/categoryController';
+import { resetCustomers } from '../controllers/customerController';
+import { resetInvoices } from '../controllers/invoiceController';
+import { resetOrders } from '../controllers/orderController';
+import { resetPayments } from '../controllers/paymentController';
+import { resetProducts } from '../controllers/productController';
+import { resetReviews } from '../controllers/reviewController';
+import { resetShipments } from '../controllers/shipmentController';
 
-const pool = new Pool(dbConfig);
-
-beforeAll(async () => {
-  // Clean the database before running tests
-  await pool.query('DELETE FROM tasks');
-  await pool.query('DELETE FROM users');
-  await pool.query('DELETE FROM products');
-  await pool.query('DELETE FROM orders');
-  await pool.query('DELETE FROM invoices');
-    await pool.query('DELETE FROM payments');
-    await pool.query('DELETE FROM shipments');
-    await pool.query('DELETE FROM reviews');
-    await pool.query('DELETE FROM categories');
-});
-
-afterAll(async () => {
-  // Clean up and close the connection
-  await pool.query('DELETE FROM tasks');
-  await pool.query('DELETE FROM users');
-  await pool.query('DELETE FROM products');
-  await pool.query('DELETE FROM orders');
-  await pool.query('DELETE FROM invoices');
-    await pool.query('DELETE FROM payments');
-    await pool.query('DELETE FROM shipments');
-    await pool.query('DELETE FROM reviews');
-    await pool.query('DELETE FROM categories');
-  pool.end();
+beforeEach(() => {
+  resetUsers();
+  resetTasks();
+  resetCategories();
+  resetCustomers();
+  resetInvoices();
+  resetOrders();
+  resetPayments();
+  resetProducts();
+  resetReviews();
+  resetShipments();
 });

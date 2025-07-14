@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Shipment } from '../interfaces/Shipment';
+import { Shipment } from '../interfaces/Shipment.js';
+
+// In-memory store for shipments
+let shipments: Shipment[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Shipment } from '../interfaces/Shipment';
  *       200:
  *         description: Successful operation
  */
-export const getShipments = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM shipments');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getShipments = (req: Request, res: Response) => {
+  res.json(shipments);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getShipments = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createShipment = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO shipments (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createShipment = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newShipment: Shipment = {
+    id: currentId++,
+    name,
+  };
+
+  shipments.push(newShipment);
+  res.status(201).json(newShipment);
 };
 
 /**
@@ -83,21 +85,18 @@ export const createShipment = async (req: Request, res: Response) => {
  *       404:
  *         description: Shipment not found
  */
-export const updateShipment = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE shipments SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Shipment not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateShipment = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const shipmentIndex = shipments.findIndex(s => s.id === parseInt(id, 10));
+
+  if (shipmentIndex === -1) {
+    return res.status(404).json({ error: 'Shipment not found' });
   }
+
+  shipments[shipmentIndex].name = name;
+  res.json(shipments[shipmentIndex]);
 };
 
 /**
@@ -119,15 +118,20 @@ export const updateShipment = async (req: Request, res: Response) => {
  *       404:
  *         description: Shipment not found
  */
-export const deleteShipment = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM shipments WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Shipment not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteShipment = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const shipmentIndex = shipments.findIndex(s => s.id === parseInt(id, 10));
+
+  if (shipmentIndex === -1) {
+    return res.status(404).json({ error: 'Shipment not found' });
   }
+
+  shipments.splice(shipmentIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the shipments array
+export const resetShipments = () => {
+  shipments = [];
+  currentId = 1;
 };

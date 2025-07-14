@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Category } from '../interfaces/Category';
+import { Category } from '../interfaces/Category.js';
+
+// In-memory store for categories
+let categories: Category[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Category } from '../interfaces/Category';
  *       200:
  *         description: Successful operation
  */
-export const getCategories = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM categories');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getCategories = (req: Request, res: Response) => {
+  res.json(categories);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getCategories = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createCategory = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO categories (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createCategory = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newCategory: Category = {
+    id: currentId++,
+    name,
+  };
+
+  categories.push(newCategory);
+  res.status(201).json(newCategory);
 };
 
 /**
@@ -83,21 +85,18 @@ export const createCategory = async (req: Request, res: Response) => {
  *       404:
  *         description: Category not found
  */
-export const updateCategory = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE categories SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Category not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateCategory = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const categoryIndex = categories.findIndex(c => c.id === parseInt(id, 10));
+
+  if (categoryIndex === -1) {
+    return res.status(404).json({ error: 'Category not found' });
   }
+
+  categories[categoryIndex].name = name;
+  res.json(categories[categoryIndex]);
 };
 
 /**
@@ -119,15 +118,20 @@ export const updateCategory = async (req: Request, res: Response) => {
  *       404:
  *         description: Category not found
  */
-export const deleteCategory = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM categories WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Category not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteCategory = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const categoryIndex = categories.findIndex(c => c.id === parseInt(id, 10));
+
+  if (categoryIndex === -1) {
+    return res.status(404).json({ error: 'Category not found' });
   }
+
+  categories.splice(categoryIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the categories array
+export const resetCategories = () => {
+  categories = [];
+  currentId = 1;
 };

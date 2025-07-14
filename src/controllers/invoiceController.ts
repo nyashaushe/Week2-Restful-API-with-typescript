@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Invoice } from '../interfaces/Invoice';
+import { Invoice } from '../interfaces/Invoice.js';
+
+// In-memory store for invoices
+let invoices: Invoice[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Invoice } from '../interfaces/Invoice';
  *       200:
  *         description: Successful operation
  */
-export const getInvoices = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM invoices');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getInvoices = (req: Request, res: Response) => {
+  res.json(invoices);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getInvoices = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createInvoice = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO invoices (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createInvoice = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newInvoice: Invoice = {
+    id: currentId++,
+    name,
+  };
+
+  invoices.push(newInvoice);
+  res.status(201).json(newInvoice);
 };
 
 /**
@@ -83,21 +85,18 @@ export const createInvoice = async (req: Request, res: Response) => {
  *       404:
  *         description: Invoice not found
  */
-export const updateInvoice = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE invoices SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Invoice not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateInvoice = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const invoiceIndex = invoices.findIndex(i => i.id === parseInt(id, 10));
+
+  if (invoiceIndex === -1) {
+    return res.status(404).json({ error: 'Invoice not found' });
   }
+
+  invoices[invoiceIndex].name = name;
+  res.json(invoices[invoiceIndex]);
 };
 
 /**
@@ -119,15 +118,20 @@ export const updateInvoice = async (req: Request, res: Response) => {
  *       404:
  *         description: Invoice not found
  */
-export const deleteInvoice = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM invoices WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Invoice not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteInvoice = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const invoiceIndex = invoices.findIndex(i => i.id === parseInt(id, 10));
+
+  if (invoiceIndex === -1) {
+    return res.status(404).json({ error: 'Invoice not found' });
   }
+
+  invoices.splice(invoiceIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the invoices array
+export const resetInvoices = () => {
+  invoices = [];
+  currentId = 1;
 };

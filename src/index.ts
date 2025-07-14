@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express';
-import taskRoutes from './routes/taskRoutes';
-import userRoutes from './routes/userRoutes';
-import productRoutes from './routes/productRoutes';
-import orderRoutes from './routes/orderRoutes';
-import customerRoutes from './routes/customerRoutes';
-import invoiceRoutes from './routes/invoiceRoutes';
-import paymentRoutes from './routes/paymentRoutes';
-import shipmentRoutes from './routes/shipmentRoutes';
-import reviewRoutes from './routes/reviewRoutes';
-import categoryRoutes from './routes/categoryRoutes';
+import taskRoutes from './routes/taskRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import customerRoutes from './routes/customerRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import shipmentRoutes from './routes/shipmentRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 import swaggerUi from 'swagger-ui-express';
-const swaggerSpec = require('../swagger.js');
-import { loggingMiddleware } from './middleware/logging';
+import swaggerSpec from './swagger.js';
+import { loggingMiddleware } from './middleware/logging.js';
 
 const app = express();
 const port = 3000;
@@ -36,6 +36,6 @@ app.use('/users', userRoutes);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
+
+
+export default app;

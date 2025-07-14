@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { User } from '../interfaces/User';
+import { User } from '../interfaces/User.js';
+
+// In-memory store for users
+let users: User[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { User } from '../interfaces/User';
  *       200:
  *         description: Successful operation
  */
-export const getUsers = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM users');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getUsers = (req: Request, res: Response) => {
+  res.json(users);
 };
 
 /**
@@ -43,18 +41,23 @@ export const getUsers = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name and email are required
  */
-export const createUser = async (req: Request, res: Response) => {
-  try {
-    const { name, email } = req.body;
-    const { rows } = await query(
-      'INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *',
-      [name, email]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createUser = (req: Request, res: Response) => {
+  const { name, email } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name and email are required' });
   }
+
+  const newUser: User = {
+    id: currentId++,
+    name,
+    email,
+  };
+
+  users.push(newUser);
+  res.status(201).json(newUser);
 };
 
 /**
@@ -89,21 +92,25 @@ export const createUser = async (req: Request, res: Response) => {
  *       404:
  *         description: User not found
  */
-export const updateUser = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name, email } = req.body;
-    const { rows } = await query(
-      'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *',
-      [name, email, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateUser = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
+
+  const userIndex = users.findIndex(u => u.id === parseInt(id, 10));
+
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
   }
+
+  const originalUser = users[userIndex];
+
+  users[userIndex] = {
+    ...originalUser,
+    name: name !== undefined ? name : originalUser.name,
+    email: email !== undefined ? email : originalUser.email,
+  };
+
+  res.json(users[userIndex]);
 };
 
 /**
@@ -125,15 +132,20 @@ export const updateUser = async (req: Request, res: Response) => {
  *       404:
  *         description: User not found
  */
-export const deleteUser = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteUser = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const userIndex = users.findIndex(u => u.id === parseInt(id, 10));
+
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
   }
+
+  users.splice(userIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the users array
+export const resetUsers = () => {
+  users = [];
+  currentId = 1;
 };

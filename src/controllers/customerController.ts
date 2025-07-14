@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Customer } from '../interfaces/Customer';
+import { Customer } from '../interfaces/Customer.js';
+
+// In-memory store for customers
+let customers: Customer[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Customer } from '../interfaces/Customer';
  *       200:
  *         description: Successful operation
  */
-export const getCustomers = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM customers');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getCustomers = (req: Request, res: Response) => {
+  res.json(customers);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getCustomers = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createCustomer = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO customers (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createCustomer = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newCustomer: Customer = {
+    id: currentId++,
+    name,
+  };
+
+  customers.push(newCustomer);
+  res.status(201).json(newCustomer);
 };
 
 /**
@@ -83,21 +85,24 @@ export const createCustomer = async (req: Request, res: Response) => {
  *       404:
  *         description: Customer not found
  */
-export const updateCustomer = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE customers SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Customer not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateCustomer = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const customerIndex = customers.findIndex(c => c.id === parseInt(id, 10));
+
+  if (customerIndex === -1) {
+    return res.status(404).json({ error: 'Customer not found' });
   }
+
+  const originalCustomer = customers[customerIndex];
+
+  customers[customerIndex] = {
+      ...originalCustomer,
+      name: name !== undefined ? name : originalCustomer.name,
+  };
+
+  res.json(customers[customerIndex]);
 };
 
 /**
@@ -119,15 +124,20 @@ export const updateCustomer = async (req: Request, res: Response) => {
  *       404:
  *         description: Customer not found
  */
-export const deleteCustomer = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM customers WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Customer not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteCustomer = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const customerIndex = customers.findIndex(c => c.id === parseInt(id, 10));
+
+  if (customerIndex === -1) {
+    return res.status(404).json({ error: 'Customer not found' });
   }
+
+  customers.splice(customerIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the customers array
+export const resetCustomers = () => {
+  customers = [];
+  currentId = 1;
 };

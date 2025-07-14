@@ -1,21 +1,13 @@
 import supertest from 'supertest';
-import app from '../src/index';
-import { Pool } from 'pg';
-import { dbConfig } from '../src/config';
+import app from '@src/index';
+import { resetTasks } from '@src/controllers/taskController';
 
 const request = supertest(app);
-const pool = new Pool(dbConfig);
 
 describe('Tasks API Endpoints', () => {
-  beforeAll(async () => {
-    // Clean the database before running tests
-    await pool.query('DELETE FROM tasks');
-  });
-
-  afterAll(async () => {
-    // Clean up and close the connection
-    await pool.query('DELETE FROM tasks');
-    pool.end();
+  beforeEach(() => {
+    // Reset the in-memory store before each test
+    resetTasks();
   });
 
   it('should create a new task', async () => {

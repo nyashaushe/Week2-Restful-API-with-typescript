@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Product } from '../interfaces/Product';
+import { Product } from '../interfaces/Product.js';
+
+// In-memory store for products
+let products: Product[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Product } from '../interfaces/Product';
  *       200:
  *         description: Successful operation
  */
-export const getProducts = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM products');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getProducts = (req: Request, res: Response) => {
+  res.json(products);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getProducts = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createProduct = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO products (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createProduct = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newProduct: Product = {
+    id: currentId++,
+    name,
+  };
+
+  products.push(newProduct);
+  res.status(201).json(newProduct);
 };
 
 /**
@@ -83,21 +85,18 @@ export const createProduct = async (req: Request, res: Response) => {
  *       404:
  *         description: Product not found
  */
-export const updateProduct = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE products SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateProduct = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const productIndex = products.findIndex(p => p.id === parseInt(id, 10));
+
+  if (productIndex === -1) {
+    return res.status(404).json({ error: 'Product not found' });
   }
+
+  products[productIndex].name = name;
+  res.json(products[productIndex]);
 };
 
 /**
@@ -119,15 +118,20 @@ export const updateProduct = async (req: Request, res: Response) => {
  *       404:
  *         description: Product not found
  */
-export const deleteProduct = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteProduct = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const productIndex = products.findIndex(p => p.id === parseInt(id, 10));
+
+  if (productIndex === -1) {
+    return res.status(404).json({ error: 'Product not found' });
   }
+
+  products.splice(productIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the products array
+export const resetProducts = () => {
+  products = [];
+  currentId = 1;
 };

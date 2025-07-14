@@ -4,7 +4,7 @@ import {
   createShipment,
   updateShipment,
   deleteShipment,
-} from '../controllers/shipmentController';
+} from '../controllers/shipmentController.js';
 
 const router = Router();
 

@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Task } from '../interfaces/Task';
+import { Task } from '../interfaces/Task.js';
+
+// In-memory store for tasks
+let tasks: Task[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Task } from '../interfaces/Task';
  *       200:
  *         description: Successful operation
  */
-export const getTasks = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM tasks');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getTasks = (req: Request, res: Response) => {
+  res.json(tasks);
 };
 
 /**
@@ -43,18 +41,24 @@ export const getTasks = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Title is required
  */
-export const createTask = async (req: Request, res: Response) => {
-  try {
-    const { title, description } = req.body;
-    const { rows } = await query(
-      'INSERT INTO tasks (title, description) VALUES ($1, $2) RETURNING *',
-      [title, description]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createTask = (req: Request, res: Response) => {
+  const { title, description } = req.body;
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
   }
+
+  const newTask: Task = {
+    id: currentId++,
+    title,
+    description: description || '',
+    completed: false,
+  };
+
+  tasks.push(newTask);
+  res.status(201).json(newTask);
 };
 
 /**
@@ -92,21 +96,26 @@ export const createTask = async (req: Request, res: Response) => {
  *       404:
  *         description: Task not found
  */
-export const updateTask = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { title, description, completed } = req.body;
-    const { rows } = await query(
-      'UPDATE tasks SET title = $1, description = $2, completed = $3 WHERE id = $4 RETURNING *',
-      [title, description, completed, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateTask = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { title, description, completed } = req.body;
+
+  const taskIndex = tasks.findIndex(t => t.id === parseInt(id, 10));
+
+  if (taskIndex === -1) {
+    return res.status(404).json({ error: 'Task not found' });
   }
+
+  const originalTask = tasks[taskIndex];
+
+  tasks[taskIndex] = {
+    ...originalTask,
+    title: title !== undefined ? title : originalTask.title,
+    description: description !== undefined ? description : originalTask.description,
+    completed: completed !== undefined ? completed : originalTask.completed,
+  };
+
+  res.json(tasks[taskIndex]);
 };
 
 /**
@@ -128,15 +137,20 @@ export const updateTask = async (req: Request, res: Response) => {
  *       404:
  *         description: Task not found
  */
-export const deleteTask = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM tasks WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteTask = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const taskIndex = tasks.findIndex(t => t.id === parseInt(id, 10));
+
+  if (taskIndex === -1) {
+    return res.status(404).json({ error: 'Task not found' });
   }
+
+  tasks.splice(taskIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the tasks array
+export const resetTasks = () => {
+  tasks = [];
+  currentId = 1;
 };

@@ -4,7 +4,7 @@ import {
   createPayment,
   updatePayment,
   deletePayment,
-} from '../controllers/paymentController';
+} from '../controllers/paymentController.js';
 
 const router = Router();
 

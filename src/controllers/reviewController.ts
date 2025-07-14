@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import { query } from '../services/db';
-import { Review } from '../interfaces/Review';
+import { Review } from '../interfaces/Review.js';
+
+// In-memory store for reviews
+let reviews: Review[] = [];
+let currentId = 1;
 
 /**
  * @swagger
@@ -12,13 +15,8 @@ import { Review } from '../interfaces/Review';
  *       200:
  *         description: Successful operation
  */
-export const getReviews = async (req: Request, res: Response) => {
-  try {
-    const { rows } = await query('SELECT * FROM reviews');
-    res.json(rows);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
+export const getReviews = (req: Request, res: Response) => {
+  res.json(reviews);
 };
 
 /**
@@ -40,18 +38,22 @@ export const getReviews = async (req: Request, res: Response) => {
  *     responses:
  *       201:
  *         description: Successful operation
+ *       400:
+ *         description: Name is required
  */
-export const createReview = async (req: Request, res: Response) => {
-  try {
-    const { name } = req.body;
-    const { rows } = await query(
-      'INSERT INTO reviews (name) VALUES ($1) RETURNING *',
-      [name]
-    );
-    res.status(201).json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const createReview = (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Name is required' });
   }
+
+  const newReview: Review = {
+    id: currentId++,
+    name,
+  };
+
+  reviews.push(newReview);
+  res.status(201).json(newReview);
 };
 
 /**
@@ -83,21 +85,18 @@ export const createReview = async (req: Request, res: Response) => {
  *       404:
  *         description: Review not found
  */
-export const updateReview = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-    const { rows } = await query(
-      'UPDATE reviews SET name = $1 WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
-    res.json(rows[0]);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const updateReview = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name } = req.body;
+
+  const reviewIndex = reviews.findIndex(r => r.id === parseInt(id, 10));
+
+  if (reviewIndex === -1) {
+    return res.status(404).json({ error: 'Review not found' });
   }
+
+  reviews[reviewIndex].name = name;
+  res.json(reviews[reviewIndex]);
 };
 
 /**
@@ -119,15 +118,20 @@ export const updateReview = async (req: Request, res: Response) => {
  *       404:
  *         description: Review not found
  */
-export const deleteReview = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { rows } = await query('DELETE FROM reviews WHERE id = $1 RETURNING *', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Review not found' });
-    }
-    res.status(204).send();
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+export const deleteReview = (req: Request, res: Response) => {
+  const { id } = req.params;
+  const reviewIndex = reviews.findIndex(r => r.id === parseInt(id, 10));
+
+  if (reviewIndex === -1) {
+    return res.status(404).json({ error: 'Review not found' });
   }
+
+  reviews.splice(reviewIndex, 1);
+  res.status(204).send();
+};
+
+// Helper function for testing to reset the reviews array
+export const resetReviews = () => {
+  reviews = [];
+  currentId = 1;
 };
