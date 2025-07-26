@@ -6,6 +6,10 @@
   "type": "module",
   "scripts": {
     "test": "jest",
+    "test:demo": "jest src/tests/requirements-demo.test.ts",
+    "demo": "ts-node src/demo/runner.ts",
+    "lint": "tslint 'src/**/*.ts'",
+    "lint:fix": "tslint 'src/**/*.ts' --fix",
     "dev": "nodemon --watch \"src/**/*.ts\" --exec \"node --loader ts-node/esm src/server.ts\"",
     "generate": "node scripts/generate-resource.js",
     "build": "tsc",
